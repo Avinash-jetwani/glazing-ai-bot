@@ -1,0 +1,48 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Docs/Usage" />
+
+# Glazing AI Widget Usage
+
+## Installation
+
+Add the following script to your website:
+
+```html
+<!-- Basic installation -->
+<script src="https://cdn.example.com/inject.js"></script>
+
+<!-- With API key -->
+<script src="https://cdn.example.com/inject.js" data-key="YOUR_API_KEY"></script>
+```
+
+## Manual Initialization
+
+You can also initialize the widget programmatically:
+
+```javascript
+// Basic initialization
+window.initGlazingWidget();
+
+// With configuration
+window.initGlazingWidget({
+  key: 'YOUR_API_KEY'
+});
+```
+
+## Styling
+
+The widget uses Tailwind CSS classes and can be customized by overriding these classes in your CSS.
+
+## API Reference
+
+### Methods
+
+- `window.initGlazingWidget(config)` - Initialize the widget
+- `window.GlazingWidget.init()` - Alternative initialization method
+
+### Configuration
+
+| Property | Type | Description |
+| -------- | ---- | ----------- |
+| `key` | string | Your API key |
