@@ -5,11 +5,13 @@ export interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 interface WebSocketResponse {
   type: string;
-  message: string;
+  message?: string;
+  token?: string;
   session_id: string;
   timestamp?: string;
 }
@@ -30,12 +32,14 @@ const getWebSocketUrl = (widgetKey: string): string => {
 const useWebSocket = (widgetKey: string, isActive: boolean = true) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
   const isMountedRef = useRef<boolean>(true);
   const maxReconnectAttempts = 15;
   const reconnectDelay = 1000;
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const streamingMessageIdRef = useRef<string | null>(null);
 
   // Create WebSocket connection
   const connectWebSocket = useCallback(() => {
@@ -92,7 +96,7 @@ const useWebSocket = (widgetKey: string, isActive: boolean = true) => {
           if (data.type === 'echo') {
             const newMessage: Message = {
               id: new Date().getTime().toString(),
-              text: data.message,
+              text: data.message || '',
               isUser: false,
               timestamp: new Date(),
             };
@@ -107,6 +111,60 @@ const useWebSocket = (widgetKey: string, isActive: boolean = true) => {
                 timestamp: new Date().toISOString()
               }));
             }
+          } else if (data.type === 'status' && data.message === 'thinking') {
+            // Set thinking state and create initial empty message for streaming
+            setIsThinking(true);
+            const streamingMsgId = new Date().getTime().toString();
+            streamingMessageIdRef.current = streamingMsgId;
+            
+            const newMessage: Message = {
+              id: streamingMsgId,
+              text: '',
+              isUser: false,
+              timestamp: new Date(),
+              isStreaming: true
+            };
+            setMessages(prev => [...prev, newMessage]);
+          } else if (data.type === 'token' && data.token && streamingMessageIdRef.current) {
+            // Append token to the current streaming message
+            setMessages(prev => prev.map(msg => 
+              msg.id === streamingMessageIdRef.current
+                ? { ...msg, text: msg.text + data.token }
+                : msg
+            ));
+          } else if (data.type === 'completion' && data.message) {
+            // Update the streaming message to final state
+            setIsThinking(false);
+            
+            if (streamingMessageIdRef.current) {
+              setMessages(prev => prev.map(msg => 
+                msg.id === streamingMessageIdRef.current
+                  ? { ...msg, text: data.message || msg.text, isStreaming: false }
+                  : msg
+              ));
+              streamingMessageIdRef.current = null;
+            } else {
+              // If we somehow missed the streaming setup, add the complete message
+              const newMessage: Message = {
+                id: new Date().getTime().toString(),
+                text: data.message,
+                isUser: false,
+                timestamp: new Date(),
+              };
+              setMessages(prev => [...prev, newMessage]);
+            }
+          } else if (data.type === 'error') {
+            console.error('Error from server:', data.message);
+            // Add error message
+            const errorMessage: Message = {
+              id: new Date().getTime().toString(),
+              text: `Error: ${data.message || 'Unknown error'}`,
+              isUser: false,
+              timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            setIsThinking(false);
+            streamingMessageIdRef.current = null;
           }
         } catch (error) {
           console.error('Error parsing message:', error);
@@ -119,6 +177,7 @@ const useWebSocket = (widgetKey: string, isActive: boolean = true) => {
 
         console.log(`WebSocket closed: ${event.code} - ${event.reason || 'No reason'}`);
         setIsConnected(false);
+        setIsThinking(false);
 
         // Don't attempt to reconnect if this is coming from a deliberate close
         if (event.code === 1000) {
@@ -197,6 +256,8 @@ const useWebSocket = (widgetKey: string, isActive: boolean = true) => {
   const reconnect = useCallback(() => {
     if (!isActive) return;
     setReconnectAttempt(0);
+    streamingMessageIdRef.current = null;
+    setIsThinking(false);
     connectWebSocket();
   }, [connectWebSocket, isActive]);
 
@@ -209,6 +270,8 @@ const useWebSocket = (widgetKey: string, isActive: boolean = true) => {
       console.log('WebSocket deactivation - disconnecting...');
       wsRef.current.close(1000, 'Component deactivated');
       setIsConnected(false);
+      setIsThinking(false);
+      streamingMessageIdRef.current = null;
     }
   }, [isActive, connectWebSocket]);
 
@@ -265,7 +328,7 @@ const useWebSocket = (widgetKey: string, isActive: boolean = true) => {
     };
   }, [connectWebSocket, isActive]);
 
-  return { messages, sendMessage, isConnected, reconnect, reconnectAttempt };
+  return { messages, sendMessage, isConnected, isThinking, reconnect, reconnectAttempt };
 };
 
 export default useWebSocket;
