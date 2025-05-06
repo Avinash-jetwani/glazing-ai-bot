@@ -40,8 +40,30 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: glazing-ai-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - glazing-ai-network
+    volumes:
+      - ./apps/api:/app
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=glazingai
+      - POSTGRES_HOST=postgres
+
 volumes:
   postgres-data:
     name: glazing-ai-postgres-data
   redis-data:
-    name: glazing-ai-redis-data 
+    name: glazing-ai-redis-data
