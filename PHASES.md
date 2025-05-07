@@ -63,8 +63,9 @@ This document provides an overview of all development phases for the GlazingAI C
    ```
 4. Open the demo page in your browser:
    ```
-   http://localhost:5173/demo
+   http://localhost:5174/demo
    ```
+   Note: Port may vary (5173, 5174, etc.) - check terminal output for correct port
 5. To view component stories:
    ```
    npm run storybook
@@ -75,20 +76,30 @@ This document provides an overview of all development phases for the GlazingAI C
 - Styling is contained and won't affect parent site
 - Widget state persists in browser storage
 - Widget key identifies the widget instance
+- Key components:
+  - `/apps/widget/src/components/ChatModal.tsx`: Main chat interface
+  - `/apps/widget/src/components/Fab.tsx`: Floating action button
+  - `/apps/widget/public/demo.html`: Demo page for testing
 
 ## Phase C: WebSocket Echo
 
 ### Implementation Details
-- Added WebSocket endpoint to FastAPI backend
-- Implemented real-time message exchange
-- Added session management for conversations
-- Created connection handling with ping/pong for keepalive
-- Implemented message types:
-  - User messages
-  - System messages
-  - Status updates
-  - Tokens (for streaming)
-  - Completion messages
+- Added WebSocket endpoint to FastAPI backend:
+  - Main endpoint at `/ws/{widget_key}`
+  - Test endpoint at `/ws/test` for direct testing
+- Implemented real-time message exchange with JSON-based protocol
+- Added session management with UUID generation for each connection
+- Set up optional Redis storage for persisting sessions (configurable via `USE_REDIS` env variable)
+- Implemented connection handling with ping/pong for keepalive (30-second interval)
+- Created comprehensive message type system:
+  - `text`: Basic text messages from user
+  - `echo`: Server responses to user messages
+  - `system`: System notifications and status updates
+  - `ping`/`pong`: Connection keepalive messages
+  - `status`: Status indicators (e.g., "thinking")
+  - `token`: Individual tokens for streaming responses
+  - `completion`: Final assembled response
+  - `error`: Error messages with details
 
 ### Testing Instructions
 1. Start the backend:
@@ -99,19 +110,38 @@ This document provides an overview of all development phases for the GlazingAI C
    ```
    cd apps/widget && npm run dev
    ```
-3. Open the demo page
-4. Send messages in the chat
-5. Verify that messages are echoed back
+3. Open the demo page in your browser:
+   ```
+   http://localhost:5174/demo
+   ```
+   Note: Port may vary (5173, 5174, etc.) - check terminal output for correct port
+4. Click on the chat button in the bottom right corner
+5. Send messages in the chat and verify they're echoed back
+6. Test connection resilience:
+   ```
+   docker-compose restart api
+   ```
+   The widget should automatically reconnect
 
 ### Technical Notes
-- WebSocket connections use the endpoint: `ws://localhost:8000/ws/{widget_key}`
-- Sessions are identified by a UUID
+- WebSocket connections use endpoint: `ws://localhost:8000/ws/{widget_key}`
+- WebSockets automatically adapt to secure connections (wss:// vs ws://)
+- Sessions are identified by a UUID generated on connection
+- Session information is stored in Redis (when enabled) with a 24-hour TTL
 - Connection lifecycle includes:
-  - Connection establishment
-  - Authentication (basic)
-  - Message exchange
-  - Ping/pong for keepalive
-  - Graceful disconnection
+  - Connection establishment and acceptance
+  - Session creation with UUID
+  - Automatic keepalive via ping/pong
+  - Message exchange with JSON formatting
+  - Graceful disconnection with error handling
+- Reconnection logic:
+  - Exponential backoff strategy (increasing delay between attempts)
+  - Maximum 15 reconnect attempts
+  - Manual reconnect button after max attempts
+- Key components:
+  - `/apps/api/main.py`: FastAPI WebSocket endpoints
+  - `/apps/widget/src/hooks/useWebSocket.ts`: Frontend WebSocket hook
+  - `/apps/widget/src/components/ChatModal.tsx`: Chat UI with connection status
 
 ## Phase D: LLM Integration
 
@@ -151,8 +181,9 @@ This document provides an overview of all development phases for the GlazingAI C
 
 4. Test in browser at:
    ```
-   http://localhost:5173/demo
+   http://localhost:5174/demo
    ```
+   Note: Port may vary (5173, 5174, etc.) - check terminal output for correct port
 
 ### Technical Notes
 - The system prompt for the AI assistant is located at `apps/api/prompts/system.txt`

@@ -23,11 +23,11 @@ cd apps/widget
 
 # Start the development server
 npm run dev
-# Note the URL (typically http://localhost:5173)
+# Note the URL (typically http://localhost:5174)
 ```
 
 ### 3. Test the WebSocket Connection
-- Open the frontend URL (typically http://localhost:5173)
+- Open the frontend URL (typically http://localhost:5174)
 - Click on the chat button
 - You should see "Connected" status in the chat window
 - Try sending a message to verify the connection
@@ -40,7 +40,7 @@ npm run dev
 - Verify tooling setup: `cat .pre-commit-config.yaml`
 
 ### Testing Phase B: Widget Static UI
-- Open widget in browser: http://localhost:5173
+- Open widget in browser: http://localhost:5174/demo.html
 - Click the chat button to open the modal
 - Verify the UI elements are displayed properly
 - Test ESC key to close the modal
@@ -50,6 +50,7 @@ npm run dev
 - Open the widget and click on the chat button
 - Type a message and send it
 - Verify the message is echoed back from the server
+- Test reconnection by running: `docker-compose restart api`
 
 ### Testing Phase D: LLM Integration
 - Ensure backend is running with USE_FAKE_LLM=true (default)
@@ -73,7 +74,7 @@ python -m http.server 8080
 
 ### Using the Browser Console
 ```javascript
-// Open browser console on your widget page (http://localhost:5173)
+// Open browser console on your widget page (http://localhost:5174)
 // Run this to test the WebSocket manually
 const testWs = new WebSocket('ws://localhost:8000/ws/demo-widget-key');
 testWs.onopen = () => console.log('Test connection open');
@@ -110,7 +111,7 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ### 1. Connection Error 1006 (Abnormal Closure)
 - **Cause**: Backend server not running or WebSocket URL incorrect
-- **Solution**: 
+- **Solution**:
   - Ensure FastAPI server is running on port 8000
   - Check terminal for backend errors
   - Verify WebSocket URL is correct (ws://localhost:8000/ws/demo-widget-key)
@@ -124,7 +125,7 @@ python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ### 3. "Component unmounted" Errors
 - **Cause**: React component unmounts while WebSocket operations are ongoing
-- **Solution**: 
+- **Solution**:
   - Make sure to use the `isMountedRef` to prevent state updates after unmount
   - Don't initialize WebSocket connections for hidden/unmounted components
 
@@ -148,7 +149,7 @@ docker-compose up -d
 docker logs -f glazing-ai-api
 
 # Access the frontend same as before
-# http://localhost:5173
+# http://localhost:5174
 ```
 
 ## Chat Status Indicators
@@ -175,11 +176,14 @@ The chat widget shows various status indicators:
 - FastAPI backend with WebSocket endpoints
 - Session management with Redis (optional)
 - Real-time messaging with reconnection logic
+- Smart reconnection with exponential backoff
+- Message format validation and error handling
 
 ### Phase D - LLM Integration
 - LangChain integration for AI capabilities
 - Token streaming implementation
 - System prompt for AI personality
 - Fallback to fake LLM for testing
+- Real-time typing effect for natural responses
 
 Remember: The backend API must be running for the WebSocket connection to work properly. If you encounter any issues, check both frontend and backend console logs.

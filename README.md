@@ -33,8 +33,23 @@ npm install
 cd apps/widget
 npm run dev
 
-# Open the demo page
-open http://localhost:5173/demo
+# Open the demo page (port may vary, check terminal output)
+open http://localhost:5174/demo
+```
+
+## Project Structure
+
+```
+lead-bot-one/
+├── apps/
+│   ├── api/             # FastAPI backend service
+│   │   ├── prompts/     # System prompts for LLM
+│   │   └── main.py      # Main FastAPI application
+│   └── widget/          # React widget frontend
+│       ├── public/      # Static assets and demo page
+│       └── src/         # React components and hooks
+├── docker-compose.yml   # Docker configuration
+└── PHASES.md            # Detailed development phases
 ```
 
 ## Project Phases
