@@ -1,36 +1,68 @@
-# Glazing AI Bot
+# Glazing AI Chat Widget
 
-A sophisticated AI-powered bot application for Glazing AI.
+A sophisticated AI-powered chat widget for GlazingAI, providing real-time assistance to website visitors about energy-efficient window products.
 
 ## Features
 
-- Feature 1
-- Feature 2
-- Feature 3
+- Real-time chat interface with AI-powered responses
+- WebSocket-based communication for instant messaging
+- Token streaming for natural typing effect
+- OpenAI integration with GlazingAI product knowledge
+- Toggleable fake/real AI modes for development and testing
+- Easily embeddable in any website
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/glazing-ai-bot.git
-cd glazing-ai-bot
+git clone https://github.com/your-username/lead-bot-one.git
+cd lead-bot-one
 
-# Install dependencies
-# Instructions will be added
+# Start the infrastructure
+docker-compose up -d
+
+# Install widget dependencies
+cd apps/widget
+npm install
 ```
 
 ## Usage
 
 ```bash
-# Usage instructions will be added
+# Run the widget development server
+cd apps/widget
+npm run dev
+
+# Open the demo page
+open http://localhost:5173/demo
 ```
+
+## Project Phases
+
+This project is being developed in phases:
+
+- ✅ **Phase A**: Foundation - Repository, Docker, Infrastructure
+- ✅ **Phase B**: Widget Static UI - React Components, Tailwind CSS
+- ✅ **Phase C**: WebSocket Echo - Real-time Messaging
+- ✅ **Phase D**: LLM Integration - OpenAI and Token Streaming
+
+For detailed information about each phase including implementation details, testing instructions, and technical notes, please see [PHASES.md](PHASES.md).
 
 ## Development
 
+See the [TESTING.md](TESTING.md) file for testing procedures for all components.
+
+For LLM testing:
 ```bash
-# Development instructions will be added
+# Switch to fake LLM mode (no API costs)
+docker-compose exec api sh -c "sed -i 's/USE_FAKE_LLM=false/USE_FAKE_LLM=true/g' /app/.env"
+docker-compose restart api
+
+# Switch to real OpenAI mode (requires API key)
+docker-compose exec api sh -c "sed -i 's/USE_FAKE_LLM=true/USE_FAKE_LLM=false/g' /app/.env"
+docker-compose restart api
 ```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. # Test
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
