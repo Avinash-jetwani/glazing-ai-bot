@@ -15,10 +15,11 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, widgetKey }) => 
     text: string;
     isUser: boolean;
     timestamp: Date;
+    isStreaming?: boolean;
   }>>([]);
 
   // Always call hooks unconditionally
-  const { messages, sendMessage, isConnected, reconnect, reconnectAttempt } = useWebSocket(widgetKey || 'demo-widget-key', isOpen);
+  const { messages, sendMessage, isConnected, isThinking, reconnect, reconnectAttempt } = useWebSocket(widgetKey || 'demo-widget-key', isOpen);
 
   // Sync messages from WebSocket to local state
   useEffect(() => {
@@ -49,7 +50,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, widgetKey }) => 
   }, [localMessages]);
 
   const handleSendMessage = () => {
-    if (inputMessage.trim() && isConnected) {
+    if (inputMessage.trim() && isConnected && !isThinking) {
       sendMessage(inputMessage);
       setInputMessage('');
     }
@@ -114,6 +115,13 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, widgetKey }) => 
                   } max-w-[80%] ${message.isUser ? 'ml-auto' : ''}`}
                 >
                   <p className="text-sm">{message.text}</p>
+                  {message.isStreaming && (
+                    <span className="inline-block ml-1 animate-pulse">
+                      <span className="inline-block w-1 h-1 bg-current rounded-full mr-0.5"></span>
+                      <span className="inline-block w-1 h-1 bg-current rounded-full mr-0.5 animate-bounce delay-75"></span>
+                      <span className="inline-block w-1 h-1 bg-current rounded-full animate-bounce delay-150"></span>
+                    </span>
+                  )}
                   <p className="text-xs mt-1 opacity-70">
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -137,19 +145,22 @@ const ChatModal: React.FC<ChatModalProps> = ({ isOpen, onClose, widgetKey }) => 
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
               className="flex-1 border border-gray-300 rounded-l-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={!isConnected}
+              disabled={!isConnected || isThinking}
             />
             <button
               onClick={handleSendMessage}
-              disabled={!isConnected || !inputMessage.trim()}
+              disabled={!isConnected || !inputMessage.trim() || isThinking}
               className={`px-4 py-2 rounded-r-lg ${
-                isConnected && inputMessage.trim()
+                isConnected && inputMessage.trim() && !isThinking
                   ? 'bg-blue-600 hover:bg-blue-700 text-white'
                   : 'bg-gray-400 text-gray-200 cursor-not-allowed'
               }`}
             >
-              Send
+              {isThinking ? 'Thinking...' : 'Send'}
             </button>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            {isThinking && 'AI is thinking...'}
           </div>
         </div>
       </div>
